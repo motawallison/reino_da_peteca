@@ -7,6 +7,7 @@
     <title>Reino da Peteca - Sistema de Gestão</title>
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -25,6 +26,7 @@
             <button class="tab-btn" onclick="switchTab('atividade')">Nova Atividade</button>
             <button class="tab-btn" onclick="switchTab('desempenho')">Desempenho</button>
             <button class="tab-btn" onclick="switchTab('atletas')">Atletas</button>
+            <button class="tab-btn" onclick="switchTab('dashboard')">Dashboard do Atleta</button>
         </div>
 
         <!-- ABA 1: CADASTRO -->
@@ -217,6 +219,123 @@
                 <button id="btn_anterior" onclick="paginaAnterior()" class="page-btn">Anterior</button>
                 <span id="info_paginacao">Página 1 de 1</span>
                 <button id="btn_proximo" onclick="proximaPagina()" class="page-btn">Próxima</button>
+            </div>
+        </div>
+
+        <!-- ABA 6: DASHBOARD DO ATLETA -->
+        <div id="dashboard" class="form-section">
+            <h2>Dashboard Completo do Atleta</h2>
+
+            <!-- Filtros do Dashboard -->
+            <div class="dash-filtros" style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 6px; align-items: flex-end;">
+                <div style="flex: 2; min-width: 220px;">
+                    <label for="dash_select_atleta">Selecione o Atleta:</label>
+                    <select id="dash_select_atleta" onchange="renderizarDashboard()" style="padding: 8px;">
+                        <option value="">Carregando atletas...</option>
+                    </select>
+                </div>
+
+                <div style="flex: 1; min-width: 150px;">
+                    <label for="dash_filtro_periodo">Período:</label>
+                    <select id="dash_filtro_periodo" onchange="toggleFiltroPeriodoDash()" style="padding: 8px;">
+                        <option value="todos">Todo o Período</option>
+                        <option value="especifico">Mês Específico</option>
+                    </select>
+                </div>
+
+                <div id="dash_bloco_mes_ano" style="display: none; gap: 10px; flex: 2; min-width: 250px;">
+                    <div>
+                        <label for="dash_mes">Mês:</label>
+                        <select id="dash_mes" onchange="renderizarDashboard()" style="padding: 8px;">
+                            <option value="01">Janeiro</option>
+                            <option value="02">Fevereiro</option>
+                            <option value="03">Março</option>
+                            <option value="04">Abril</option>
+                            <option value="05">Maio</option>
+                            <option value="06">Junho</option>
+                            <option value="07">Julho</option>
+                            <option value="08">Agosto</option>
+                            <option value="09">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="dash_ano">Ano:</label>
+                        <select id="dash_ano" onchange="renderizarDashboard()" style="padding: 8px;">
+                            <option value="2025">2025</option>
+                            <option value="2026" selected>2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cards de Resumo Rápidos -->
+            <div class="dash-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                <div style="background: #e8f5e9; padding: 15px; border-radius: 6px; border-left: 4px solid #2e7d32;">
+                    <h4 style="margin: 0; color: #2e7d32; font-size: 0.9rem;">Presenças</h4>
+                    <p id="dash_total_presencas" style="font-size: 1.8rem; font-weight: bold; margin: 5px 0 0 0;">0</p>
+                </div>
+                <div style="background: #ffebee; padding: 15px; border-radius: 6px; border-left: 4px solid #c62828;">
+                    <h4 style="margin: 0; color: #c62828; font-size: 0.9rem;">Faltas</h4>
+                    <p id="dash_total_faltas" style="font-size: 1.8rem; font-weight: bold; margin: 5px 0 0 0;">0</p>
+                </div>
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; border-left: 4px solid #1565c0;">
+                    <h4 style="margin: 0; color: #1565c0; font-size: 0.9rem;">Atividades Realizadas</h4>
+                    <p id="dash_total_atividades" style="font-size: 1.8rem; font-weight: bold; margin: 5px 0 0 0;">0</p>
+                </div>
+            </div>
+
+            <!-- Gráficos e Tabelas Detalhadas -->
+            <div class="dash-charts-grid">
+                <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px;">
+                    <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Frequência (Presenças vs Faltas)</h3>
+                    <canvas id="graficoFrequencia" style="max-height: 250px;"></canvas>
+                </div>
+                <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px;">
+                    <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Atividades por Tipo / Realização</h3>
+                    <canvas id="graficoAtividades" style="max-height: 250px;"></canvas>
+                </div>
+            </div>
+
+            <!-- Tabela de Justificativas de Faltas -->
+            <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px;">
+                <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Histórico de Justificativas de Faltas</h3>
+                <div class="table-responsive">
+                    <table class="atletas-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Justificativa Informada</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela_dash_faltas">
+                            <tr><td colspan="2" style="text-align:center;">Nenhum registro para exibir.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabela de Desempenho Detalhado por Atividade -->
+            <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px;">
+                <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Desempenho Detalhado nas Atividades</h3>
+                <div class="table-responsive">
+                    <table class="atletas-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Atividade</th>
+                                <th>Resultado / Desempenho</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela_dash_desempenho">
+                            <tr><td colspan="3" style="text-align:center;">Nenhum registro para exibir.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 

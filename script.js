@@ -225,41 +225,22 @@ function carregarDadosSistema() {
 // ==========================================================
 
 function popularSelects(atletas) {
+    const selectDes = document.getElementById('des_select_atleta');
+    const selectDash = document.getElementById('dash_select_atleta'); // <--- ADICIONE ESTA LINHA
 
-    const selectDes =
-        document.getElementById(
-            'des_select_atleta'
-        );
-
-
-    let options =
-        '<option value="">Selecione um atleta...</option>';
-
+    let options = '<option value="">Selecione um atleta...</option>';
 
     atletas.forEach(atleta => {
-
-        const id =
-            atleta.id_atleta ||
-            atleta.id;
-
-        const nome =
-            atleta.nome;
-
+        const id = atleta.id_atleta || atleta.id;
+        const nome = atleta.nome;
 
         if (id && nome) {
-
-            options +=
-                `<option value="${id}">
-                    ${nome}
-                </option>`;
+            options += `<option value="${id}">${nome}</option>`;
         }
-
     });
 
-    if (selectDes) {
-        selectDes.innerHTML =
-            options;
-    }
+    if (selectDes) selectDes.innerHTML = options;
+    if (selectDash) selectDash.innerHTML = options; // <--- ADICIONE ESTA LINHA
 }
 
 
@@ -1073,5 +1054,178 @@ function proximaPagina() {
 
         renderizarTabelaAtletas();
 
+    }
+}
+
+// ==========================================================
+// FUNÇÕES DO DASHBOARD DO ATLETA
+// ==========================================================
+
+let graficoFreqInstancia = null;
+let graficoAtivInstancia = null;
+
+function toggleFiltroPeriodoDash() {
+    const tipoPeriodo = document.getElementById('dash_filtro_periodo').value;
+    const blocoMesAno = document.getElementById('dash_bloco_mes_ano');
+    
+    if (tipoPeriodo === 'especifico') {
+        blocoMesAno.style.display = 'flex';
+    } else {
+        blocoMesAno.style.display = 'none';
+    }
+    renderizarDashboard();
+}
+
+function renderizarDashboard() {
+    const idAtletaSelecionado = document.getElementById('dash_select_atleta').value;
+    const tipoPeriodo = document.getElementById('dash_filtro_periodo').value;
+    const mesSelecionado = document.getElementById('dash_mes').value;
+    const anoSelecionado = document.getElementById('dash_ano').value;
+
+    const frequencias = dadosGlobaisSistema.frequencia || [];
+    const desempenhos = dadosGlobaisSistema.desempenho || [];
+    const atividadesLista = dadosGlobaisSistema.atividade || [];
+
+    // Elementos de cards
+    const elPresencas = document.getElementById('dash_total_presencas');
+    const elFaltas = document.getElementById('dash_total_faltas');
+    const elAtividades = document.getElementById('dash_total_atividades');
+    const tbodyFaltas = document.getElementById('tabela_dash_faltas');
+    const tbodyDesempenho = document.getElementById('tabela_dash_desempenho');
+
+    if (!idAtletaSelecionado) {
+        if (elPresencas) elPresencas.textContent = '0';
+        if (elFaltas) elFaltas.textContent = '0';
+        if (elAtividades) elAtividades.textContent = '0';
+        if (tbodyFaltas) tbodyFaltas.innerHTML = `<tr><td colspan="2" style="text-align:center;">Selecione um atleta.</td></tr>`;
+        if (tbodyDesempenho) tbodyDesempenho.innerHTML = `<tr><td colspan="3" style="text-align:center;">Selecione um atleta.</td></tr>`;
+        return;
+    }
+
+    // 1. Filtrar Frequências do Atleta
+    let freqAtleta = frequencias.filter(f => String(f.id_atleta || '').trim() === String(idAtletaSelecionado));
+    
+    if (tipoPeriodo === 'especifico') {
+        freqAtleta = freqAtleta.filter(f => {
+            if (!f.data) return false;
+            const partes = String(f.data).split('T')[0].split('-');
+            return partes[0] === anoSelecionado && partes[1] === mesSelecionado;
+        });
+    }
+
+    const totalPresencas = freqAtleta.filter(f => String(f.situacao || '').trim().toUpperCase() === 'P').length;
+    const faltasLista = freqAtleta.filter(f => String(f.situacao || '').trim().toUpperCase() === 'F');
+    const totalFaltas = faltasLista.length;
+
+    if (elPresencas) elPresencas.textContent = totalPresencas;
+    if (elFaltas) elFaltas.textContent = totalFaltas;
+
+    // Preencher Tabela de Justificativas de Faltas
+    if (tbodyFaltas) {
+        tbodyFaltas.innerHTML = '';
+        if (faltasLista.length === 0) {
+            tbodyFaltas.innerHTML = `<tr><td colspan="2" style="text-align:center;">Nenhuma falta registrada no período.</td></tr>`;
+        } else {
+            faltasLista.forEach(f => {
+                const dataFmt = f.data ? String(f.data).split('T')[0].split('-').reverse().join('/') : '-';
+                const justificativa = f.justificativa || 'Sem justificativa informada';
+                tbodyFaltas.innerHTML += `<tr><td>${dataFmt}</td><td>${justificativa}</td></tr>`;
+            });
+        }
+    }
+
+    // 2. Filtrar Desempenhos do Atleta
+    let despAtleta = desempenhos.filter(d => String(d.id_atleta || '').trim() === String(idAtletaSelecionado));
+
+    if (tipoPeriodo === 'especifico') {
+        despAtleta = despAtleta.filter(d => {
+            if (!d.data) return false;
+            const partes = String(d.data).split('T')[0].split('-');
+            return partes[0] === anoSelecionado && partes[1] === mesSelecionado;
+        });
+    }
+
+    if (elAtividades) elAtividades.textContent = despAtleta.length;
+
+    // Preencher Tabela de Desempenho
+    if (tbodyDesempenho) {
+        tbodyDesempenho.innerHTML = '';
+        if (despAtleta.length === 0) {
+            tbodyDesempenho.innerHTML = `<tr><td colspan="3" style="text-align:center;">Nenhum desempenho registrado no período.</td></tr>`;
+        } else {
+            despAtleta.forEach(d => {
+                const dataFmt = d.data ? String(d.data).split('T')[0].split('-').reverse().join('/') : '-';
+                
+                // Encontrar nome da atividade
+                const ativObj = atividadesLista.find(a => String(a.id_atividade || a.id) === String(d.id_atividade));
+                const nomeAtividade = ativObj ? (ativObj.nome_atividade || ativObj.nome) : 'Atividade #' + d.id_atividade;
+                const resultado = d.desempenho || '-';
+
+                tbodyDesempenho.innerHTML += `
+                    <tr>
+                        <td>${dataFmt}</td>
+                        <td><strong>${nomeAtividade}</strong></td>
+                        <td>${resultado}</td>
+                    </tr>
+                `;
+            });
+        }
+    }
+
+    // 3. Renderizar Gráficos Chart.js
+    atualizarGraficosDashboard(totalPresencas, totalFaltas, despAtleta, atividadesLista);
+}
+
+function atualizarGraficosDashboard(presencas, faltas, despAtleta, atividadesLista) {
+    // Gráfico de Frequência (Pizza / Rosca)
+    const ctxFreq = document.getElementById('graficoFrequencia');
+    if (ctxFreq) {
+        if (graficoFreqInstancia) graficoFreqInstancia.destroy();
+        graficoFreqInstancia = new Chart(ctxFreq, {
+            type: 'doughnut',
+            data: {
+                labels: ['Presenças', 'Faltas'],
+                datasets: [{
+                    data: [presencas, faltas],
+                    backgroundColor: ['#2e7d32', '#c62828']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    // Gráfico de Atividades Realizadas por Categoria/Nome
+    const contagemAtiv = {};
+    despAtleta.forEach(d => {
+        const ativObj = atividadesLista.find(a => String(a.id_atividade || a.id) === String(d.id_atividade));
+        const nome = ativObj ? (ativObj.nome_atividade || ativObj.nome) : 'Outras';
+        contagemAtiv[nome] = (contagemAtiv[nome] || 0) + 1;
+    });
+
+    const labelsAtiv = Object.keys(contagemAtiv);
+    const dadosAtiv = Object.values(contagemAtiv);
+
+    const ctxAtiv = document.getElementById('graficoAtividades');
+    if (ctxAtiv) {
+        if (graficoAtivInstancia) graficoAtivInstancia.destroy();
+        graficoAtivInstancia = new Chart(ctxAtiv, {
+            type: 'bar',
+            data: {
+                labels: labelsAtiv.length > 0 ? labelsAtiv : ['Nenhuma atividade'],
+                datasets: [{
+                    label: 'Realizações',
+                    data: dadosAtiv.length > 0 ? dadosAtiv : [0],
+                    backgroundColor: '#1565c0'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
     }
 }
