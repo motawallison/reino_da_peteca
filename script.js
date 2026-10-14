@@ -202,6 +202,11 @@ function carregarDadosSistema() {
 
             renderizarTabelaAtletas();
 
+            // ------------------------------
+            // TABELA DE FREQUÊNCIA DO DIA
+            // ------------------------------
+            carregarFrequenciaDoDia();
+
         })
 
         .catch(error => {
@@ -220,11 +225,6 @@ function carregarDadosSistema() {
 // ==========================================================
 
 function popularSelects(atletas) {
-
-    const selectFreq =
-        document.getElementById(
-            'freq_select_atleta'
-        );
 
     const selectDes =
         document.getElementById(
@@ -255,12 +255,6 @@ function popularSelects(atletas) {
         }
 
     });
-
-
-    if (selectFreq) {
-        selectFreq.innerHTML =
-            options;
-    }
 
     if (selectDes) {
         selectDes.innerHTML =
@@ -320,33 +314,6 @@ function popularSelectAtividades(
 
 
 // ==========================================================
-// ATUALIZAR ATLETA SELECIONADO
-// ==========================================================
-
-function atualizarAtletaSelecionado(tipo) {
-
-    const select =
-        document.getElementById(
-            `${tipo}_select_atleta`
-        );
-
-    const campoId =
-        document.getElementById(
-            `${tipo}_id`
-        );
-
-    if (
-        select &&
-        campoId
-    ) {
-
-        campoId.value =
-            select.value;
-    }
-}
-
-
-// ==========================================================
 // ATUALIZAR ATIVIDADE SELECIONADA
 // ==========================================================
 
@@ -401,7 +368,143 @@ function atualizarAtletaDesempenho() {
 
 
 // ==========================================================
-// ENVIAR DADOS
+// RENDERIZAR TABELA DE FREQUÊNCIA POR DATA
+// ==========================================================
+
+function carregarFrequenciaDoDia() {
+    const tbody = document.getElementById('tabela_frequencia_corpo');
+    if (!tbody) return;
+
+    const atletas = dadosGlobaisSistema.cadastro || [];
+    const frequencias = dadosGlobaisSistema.frequencia || [];
+    const dataInput = document.getElementById('freq_data');
+    
+    if (!dataInput) return;
+    const dataSelecionada = dataInput.value;
+
+    tbody.innerHTML = '';
+
+    if (atletas.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Nenhum atleta cadastrado.</td></tr>`;
+        return;
+    }
+
+    atletas.forEach(atleta => {
+        const idAtleta = String(atleta.id_atleta || atleta.id || '').trim();
+        const nomeAtleta = atleta.nome || '-';
+
+        // Procura se já existe registro de frequência para este atleta nesta data
+        const registroExistente = frequencias.find(f => {
+            const fId = String(f.id_atleta || '').trim();
+            const fData = String(f.data || '').split('T')[0];
+            return fId === idAtleta && fData === dataSelecionada;
+        });
+
+        const situacaoAtual = registroExistente ? registroExistente.situacao : 'P';
+        const justificativaAtual = registroExistente ? (registroExistente.justificativa || '') : '';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${idAtleta}</td>
+            <td><strong>${nomeAtleta}</strong></td>
+            <td>
+                <select class="freq-situacao-item" data-id="${idAtleta}" style="padding: 6px; width: 100%;">
+                    <option value="P" ${situacaoAtual === 'P' ? 'selected' : ''}>P - Presente</option>
+                    <option value="F" ${situacaoAtual === 'F' ? 'selected' : ''}>F - Faltou</option>
+                </select>
+            </td>
+            <td>
+                <input type="text" class="freq-justificativa-item" data-id="${idAtleta}" value="${justificativaAtual}" placeholder="Motivo da falta..." style="padding: 6px; width: 100%;">
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+
+// ==========================================================
+// ENVIAR FREQUÊNCIA EM LOTE (COM BLOQUEIO DE DUPLICIDADE)
+// ==========================================================
+
+function enviarFrequenciaLote(event) {
+    event.preventDefault();
+
+    const dataSelecionada = document.getElementById('freq_data').value;
+    const linhas = document.querySelectorAll('#tabela_frequencia_corpo tr');
+    const frequenciasExistentes = dadosGlobaisSistema.frequencia || [];
+    
+    if (linhas.length === 0) {
+        alert('Nenhum atleta para salvar.');
+        return;
+    }
+
+    let itensParaEnviar = [];
+    let atletasDuplicados = [];
+
+    linhas.forEach(tr => {
+        const selectSituacao = tr.querySelector('.freq-situacao-item');
+        const inputJustificativa = tr.querySelector('.freq-justificativa-item');
+
+        if (selectSituacao && inputJustificativa) {
+            const idAtleta = selectSituacao.getAttribute('data-id');
+            const atleta = dadosGlobaisSistema.cadastro.find(a => String(a.id_atleta || a.id) === String(idAtleta));
+            const nomeAtleta = atleta ? atleta.nome : 'Atleta';
+
+            // VERIFICAÇÃO DE DUPLICIDADE NA MESMA DATA
+            const jaExisteNaData = frequenciasExistentes.some(f => {
+                const fId = String(f.id_atleta || '').trim();
+                const fData = String(f.data || '').split('T')[0];
+                return fId === String(idAtleta) && fData === dataSelecionada;
+            });
+
+            if (jaExisteNaData) {
+                atletasDuplicados.push(nomeAtleta);
+            }
+
+            itensParaEnviar.push({
+                acao: 'frequencia',
+                id_atleta: idAtleta,
+                nome: nomeAtleta,
+                data: dataSelecionada,
+                situacao: selectSituacao.value,
+                justificativa: inputJustificativa.value
+            });
+        }
+    });
+
+    // Se já houver registros para algum atleta nesta data, bloqueia o envio
+    if (atletasDuplicados.length > 0) {
+        alert(`❌ Bloqueio de Segurança:\n\nJá existe um registro de frequência lançado para a data ${dataSelecionada.split('-').reverse().join('/')} para o(s) seguinte(s) atleta(s):\n\n• ${atletasDuplicados.join('\n• ')}\n\nPara alterar, edite diretamente na planilha ou selecione outra data.`);
+        return;
+    }
+
+    mostrarLoading(true);
+
+    let promessas = itensParaEnviar.map(item => {
+        return fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(item)
+        }).then(res => res.json());
+    });
+
+    Promise.all(promessas)
+        .then(() => {
+            alert('Frequências salvas com sucesso!');
+            carregarDadosSistema();
+        })
+        .catch(error => {
+            console.error('Erro ao salvar frequências:', error);
+            alert('Erro ao salvar algumas frequências.');
+        })
+        .finally(() => {
+            mostrarLoading(false);
+        });
+}
+
+
+// ==========================================================
+// ENVIAR DADOS (OUTROS FORMULÁRIOS)
 // ==========================================================
 
 function enviarDados(event, tipo) {
@@ -450,60 +553,6 @@ function enviarDados(event, tipo) {
             contato:
                 document.getElementById(
                     'cad_contato'
-                ).value
-        };
-    }
-
-
-    // ======================================================
-    // FREQUÊNCIA
-    // ======================================================
-
-    else if (tipo === 'frequencia') {
-
-        const select =
-            document.getElementById(
-                'freq_select_atleta'
-            );
-
-        const idAtleta =
-            select.value;
-
-        const atleta =
-            dadosGlobaisSistema.cadastro.find(
-                a =>
-                    String(
-                        a.id_atleta || a.id
-                    ) ===
-                    String(idAtleta)
-            );
-
-
-        dados = {
-
-            acao: 'frequencia',
-
-            id_atleta:
-                idAtleta,
-
-            nome:
-                atleta
-                    ? atleta.nome
-                    : '',
-
-            data:
-                document.getElementById(
-                    'freq_data'
-                ).value,
-
-            situacao:
-                document.getElementById(
-                    'freq_situacao'
-                ).value,
-
-            justificativa:
-                document.getElementById(
-                    'freq_justificativa'
                 ).value
         };
     }
@@ -713,10 +762,6 @@ function limparFormulario(tipo) {
         formId = 'formCadastro';
     }
 
-    else if (tipo === 'frequencia') {
-        formId = 'formFrequencia';
-    }
-
     else if (
         tipo === 'criar_atividade'
     ) {
@@ -779,375 +824,182 @@ function mostrarLoading(
 // TABELA DE ATLETAS
 // ==========================================================
 
+// ==========================================================
+// TABELA DE ATLETAS (COM FILTRO DE MÊS E ANO ESPECÍFICO)
+// ==========================================================
+
 function renderizarTabelaAtletas() {
 
-    const atletas =
-        dadosGlobaisSistema.cadastro || [];
+    const atletas = dadosGlobaisSistema.cadastro || [];
+    const frequencias = dadosGlobaisSistema.frequencia || [];
+    const desempenhos = dadosGlobaisSistema.desempenho || [];
 
-    const frequencias =
-        dadosGlobaisSistema.frequencia || [];
-
-    const desempenhos =
-        dadosGlobaisSistema.desempenho || [];
-
-    const resumo =
-        dadosGlobaisSistema
-            .resumo
-            ?.presencas || {};
-
-
-    const tbody =
-        document.getElementById(
-            'tabela_atletas_corpo'
-        );
-
+    const tbody = document.getElementById('tabela_atletas_corpo');
     if (!tbody) {
         return;
     }
 
-
     tbody.innerHTML = '';
 
-
     if (atletas.length === 0) {
-
         tbody.innerHTML = `
             <tr>
-                <td colspan="6"
-                    style="text-align:center;">
+                <td colspan="6" style="text-align:center;">
                     Nenhum atleta cadastrado.
                 </td>
             </tr>
         `;
-
         return;
     }
 
-
     // ======================================================
-    // FILTRO DE PERÍODO
+    // CAPTURAR FILTROS DE MÊS E ANO
     // ======================================================
+    const selectMes = document.getElementById('filtro_mes');
+    const selectAno = document.getElementById('filtro_ano');
 
-    const filtro =
-        document.getElementById(
-            'filtro_periodo'
-        );
-
-    const periodo =
-        filtro
-            ? filtro.value
-            : 'todos';
-
-
-    // ======================================================
-    // CALCULAR DATA LIMITE
-    // ======================================================
-
-    let dataLimite = null;
-
-    const hoje =
-        new Date();
-
-
-    if (periodo === 'semana') {
-
-        dataLimite =
-            new Date();
-
-        dataLimite.setDate(
-            hoje.getDate() - 7
-        );
-    }
-
-    else if (periodo === 'mes') {
-
-        dataLimite =
-            new Date();
-
-        dataLimite.setMonth(
-            hoje.getMonth() - 1
-        );
-    }
-
-    else if (periodo === 'ano') {
-
-        dataLimite =
-            new Date();
-
-        dataLimite.setFullYear(
-            hoje.getFullYear() - 1
-        );
-    }
+    const mesSelecionado = selectMes ? selectMes.value : 'todos'; // Ex: '01', '02', etc.
+    const anoSelecionado = selectAno ? selectAno.value : 'todos'; // Ex: '2026', '2027', etc.
 
 
     // ======================================================
     // FILTRAR E MONTAR DADOS
     // ======================================================
 
-    const linhas =
-        atletas.map(atleta => {
+    const linhas = atletas.map(atleta => {
 
-            const idAtleta =
-                String(
-                    atleta.id_atleta ||
-                    atleta.id ||
-                    ''
-                ).trim();
+        const idAtleta = String(atleta.id_atleta || atleta.id || '').trim();
+        const nomeAtleta = atleta.nome || '-';
+        const idadeAtleta = atleta.idade || '-';
+        const respAtleta = atleta.responsavel || '-';
 
 
-            const nomeAtleta =
-                atleta.nome || '-';
-
-            const idadeAtleta =
-                atleta.idade || '-';
-
-            const respAtleta =
-                atleta.responsavel || '-';
-
-
-            // ----------------------------------------------
-            // FREQUÊNCIAS DO ATLETA
-            // ----------------------------------------------
-
-            let freqAtleta =
-                frequencias.filter(
-                    f =>
-                        String(
-                            f.id_atleta || ''
-                        ).trim() ===
-                        idAtleta
-                );
-
-
-            if (dataLimite) {
-
-                freqAtleta =
-                    freqAtleta.filter(f => {
-
-                        if (!f.data) {
-                            return false;
-                        }
-
-                        return new Date(
-                            f.data
-                        ) >= dataLimite;
-
-                    });
-            }
-
-
-            const presencas =
-                freqAtleta.filter(
-                    f =>
-                        String(
-                            f.situacao || ''
-                        )
-                        .trim()
-                        .toUpperCase() === 'P'
-                ).length;
-
-
-            // ----------------------------------------------
-            // DESEMPENHOS DO ATLETA
-            // ----------------------------------------------
-
-            let desempenhoAtleta =
-                desempenhos.filter(
-                    d =>
-                        String(
-                            d.id_atleta || ''
-                        ).trim() ===
-                        idAtleta
-                );
-
-
-            if (dataLimite) {
-
-                desempenhoAtleta =
-                    desempenhoAtleta.filter(
-                        d => {
-
-                            if (!d.data) {
-                                return false;
-                            }
-
-                            return new Date(
-                                d.data
-                            ) >= dataLimite;
-
-                        }
-                    );
-            }
-
-
-            const totalAtividades =
-                desempenhoAtleta.length;
-
-
-            return {
-
-                idAtleta,
-
-                nomeAtleta,
-
-                idadeAtleta,
-
-                respAtleta,
-
-                presencas,
-
-                totalAtividades
-
-            };
-
+        // ----------------------------------------------
+        // FILTRAR FREQUÊNCIAS DO ATLETA POR MÊS/ANO
+        // ----------------------------------------------
+        let freqAtleta = frequencias.filter(f => {
+            if (!f.data) return false;
+            const idF = String(f.id_atleta || '').trim();
+            return idF === idAtleta;
         });
+
+        if (mesSelecionado !== 'todos' || anoSelecionado !== 'todos') {
+            freqAtleta = freqAtleta.filter(f => {
+                // Formato esperado da data: 'YYYY-MM-DD' ou 'YYYY-MM-DDTHH:mm:ss'
+                const partesData = String(f.data).split('T')[0].split('-');
+                if (partesData.length < 3) return false;
+
+                const anoReg = partesData[0];
+                const mesReg = partesData[1];
+
+                const matchAno = (anoSelecionado === 'todos' || anoReg === anoSelecionado);
+                const matchMes = (mesSelecionado === 'todos' || mesReg === mesSelecionado);
+
+                return matchAno && matchMes;
+            });
+        }
+
+        const presencas = freqAtleta.filter(
+            f => String(f.situacao || '').trim().toUpperCase() === 'P'
+        ).length;
+
+
+        // ----------------------------------------------
+        // FILTRAR DESEMPENHOS DO ATLETA POR MÊS/ANO
+        // ----------------------------------------------
+        let desempenhoAtleta = desempenhos.filter(d => {
+            if (!d.data) return false;
+            const idD = String(d.id_atleta || '').trim();
+            return idD === idAtleta;
+        });
+
+        if (mesSelecionado !== 'todos' || anoSelecionado !== 'todos') {
+            desempenhoAtleta = desempenhoAtleta.filter(d => {
+                const partesData = String(d.data).split('T')[0].split('-');
+                if (partesData.length < 3) return false;
+
+                const anoReg = partesData[0];
+                const mesReg = partesData[1];
+
+                const matchAno = (anoSelecionado === 'todos' || anoReg === anoSelecionado);
+                const matchMes = (mesSelecionado === 'todos' || mesReg === mesSelecionado);
+
+                return matchAno && matchMes;
+            });
+        }
+
+        const totalAtividades = desempenhoAtleta.length;
+
+
+        return {
+            idAtleta,
+            nomeAtleta,
+            idadeAtleta,
+            respAtleta,
+            presencas,
+            totalAtividades
+        };
+
+    });
 
 
     // ======================================================
     // PAGINAÇÃO
     // ======================================================
 
-    const totalPaginas =
-        Math.max(
-            1,
-            Math.ceil(
-                linhas.length /
-                itensPorPagina
-            )
-        );
+    const totalPaginas = Math.max(1, Math.ceil(linhas.length / itensPorPagina));
 
-
-    if (
-        paginaAtual >
-        totalPaginas
-    ) {
-        paginaAtual =
-            totalPaginas;
+    if (paginaAtual > totalPaginas) {
+        paginaAtual = totalPaginas;
     }
 
-
-    const inicio =
-        (paginaAtual - 1) *
-        itensPorPagina;
-
-    const fim =
-        inicio +
-        itensPorPagina;
-
-
-    const linhasPagina =
-        linhas.slice(
-            inicio,
-            fim
-        );
+    const inicio = (paginaAtual - 1) * itensPorPagina;
+    const fim = inicio + itensPorPagina;
+    const linhasPagina = linhas.slice(inicio, fim);
 
 
     // ======================================================
-    // RENDERIZAR
+    // RENDERIZAR NA TABELA
     // ======================================================
 
-    linhasPagina.forEach(
-        linha => {
+    linhasPagina.forEach(linha => {
+        const tr = document.createElement('tr');
 
-            const tr =
-                document.createElement(
-                    'tr'
-                );
+        tr.innerHTML = `
+            <td>${linha.idAtleta}</td>
+            <td><strong>${linha.nomeAtleta}</strong></td>
+            <td>${linha.idadeAtleta}</td>
+            <td>${linha.respAtleta}</td>
+            <td>
+                <span style="color:#2e7d32; font-weight:bold;">
+                    ${linha.presencas}
+                </span>
+            </td>
+            <td>
+                <span style="color:#1565c0; font-weight:bold;">
+                    ${linha.totalAtividades}
+                </span>
+            </td>
+        `;
 
-
-            tr.innerHTML = `
-
-                <td>
-                    ${linha.idAtleta}
-                </td>
-
-                <td>
-                    <strong>
-                        ${linha.nomeAtleta}
-                    </strong>
-                </td>
-
-                <td>
-                    ${linha.idadeAtleta}
-                </td>
-
-                <td>
-                    ${linha.respAtleta}
-                </td>
-
-                <td>
-                    <span
-                        style="
-                            color:#2e7d32;
-                            font-weight:bold;
-                        "
-                    >
-                        ${linha.presencas}
-                    </span>
-                </td>
-
-                <td>
-                    <span
-                        style="
-                            color:#1565c0;
-                            font-weight:bold;
-                        "
-                    >
-                        ${linha.totalAtividades}
-                    </span>
-                </td>
-
-            `;
-
-
-            tbody.appendChild(tr);
-
-        }
-    );
+        tbody.appendChild(tr);
+    });
 
 
     // ======================================================
-    // INFORMAÇÃO DA PAGINAÇÃO
+    // CONTROLES DE PAGINAÇÃO
     // ======================================================
 
-    const info =
-        document.getElementById(
-            'info_paginacao'
-        );
-
+    const info = document.getElementById('info_paginacao');
     if (info) {
-
-        info.textContent =
-            `Página ${paginaAtual} de ${totalPaginas}`;
-
+        info.textContent = `Página ${paginaAtual} de ${totalPaginas}`;
     }
 
+    const btnAnterior = document.getElementById('btn_anterior');
+    const btnProximo = document.getElementById('btn_proximo');
 
-    const btnAnterior =
-        document.getElementById(
-            'btn_anterior'
-        );
-
-    const btnProximo =
-        document.getElementById(
-            'btn_proximo'
-        );
-
-
-    if (btnAnterior) {
-
-        btnAnterior.disabled =
-            paginaAtual <= 1;
-
-    }
-
-
-    if (btnProximo) {
-
-        btnProximo.disabled =
-            paginaAtual >= totalPaginas;
-
-    }
+    if (btnAnterior) btnAnterior.disabled = paginaAtual <= 1;
+    if (btnProximo) btnProximo.disabled = paginaAtual >= totalPaginas;
 }
 
 

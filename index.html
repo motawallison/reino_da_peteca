@@ -62,31 +62,30 @@
 
         <!-- ABA 2: FREQUENCIA -->
         <div id="frequencia" class="form-section">
-            <h2>Registro de Frequência</h2>
-            <form id="formFrequencia" onsubmit="enviarDados(event, 'frequencia')">
-                <input type="hidden" id="freq_id">
-                <div class="form-group">
-                    <label>Atleta:</label>
-                    <select id="freq_select_atleta" required onchange="atualizarAtletaSelecionado('freq')">
-                        <option value="">Carregando atletas...</option>
-                    </select>
+            <h2>Registro de Frequência em Lote</h2>
+            <form id="formFrequencia" onsubmit="enviarFrequenciaLote(event)">
+                <div class="form-group" style="max-width: 300px; margin-bottom: 2rem;">
+                    <label>Data da Frequência:</label>
+                    <input type="date" id="freq_data" required onchange="carregarFrequenciaDoDia()">
                 </div>
-                <div class="form-group">
-                    <label>Data:</label>
-                    <input type="date" id="freq_data" required>
+
+                <div class="table-responsive">
+                    <table class="atletas-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome do Atleta</th>
+                                <th>Situação</th>
+                                <th>Justificativa (Se Faltou)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela_frequencia_corpo">
+                            <!-- Preenchido dinamicamente via JavaScript -->
+                        </tbody>
+                    </table>
                 </div>
-                <div class="form-group">
-                    <label>Situação:</label>
-                    <select id="freq_situacao" required>
-                        <option value="P">P - Presente</option>
-                        <option value="F">F - Faltou</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Justificativa (caso faltou):</label>
-                    <textarea id="freq_justificativa" placeholder="Motivo da falta (opcional)"></textarea>
-                </div>
-                <button type="submit" class="submit-btn">Registrar Frequência</button>
+
+                <button type="submit" class="submit-btn" style="margin-top: 1.5rem;">Salvar Frequência da Data</button>
             </form>
         </div>
 
@@ -164,22 +163,34 @@
         <div id="atletas" class="form-section">
             <h2>Relatório Geral de Atletas</h2>
 
-            <div class="filter-bar">
+            <div class="filtro-container" style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center;">
                 <div>
-                    <label>Período:</label>
-                    <select id="filtro_periodo" onchange="renderizarTabelaAtletas()">
-                        <option value="semana">Última Semana</option>
-                        <option value="mes" selected>Último Mês</option>
-                        <option value="ano">Último Ano</option>
-                        <option value="todos">Todo o Período</option>
+                    <label for="filtro_mes">Mês:</label>
+                    <select id="filtro_mes" onchange="renderizarTabelaAtletas()" style="padding: 6px;">
+                        <option value="todos">Todos os Meses</option>
+                        <option value="01">Janeiro</option>
+                        <option value="02">Fevereiro</option>
+                        <option value="03">Março</option>
+                        <option value="04">Abril</option>
+                        <option value="05">Maio</option>
+                        <option value="06">Junho</option>
+                        <option value="07">Julho</option>
+                        <option value="08">Agosto</option>
+                        <option value="09">Setembro</option>
+                        <option value="10">Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
                     </select>
                 </div>
+            
                 <div>
-                    <label>Exibir:</label>
-                    <select id="filtro_itens_pagina" onchange="mudarItensPorPagina()">
-                        <option value="10">10 por página</option>
-                        <option value="20">20 por página</option>
-                        <option value="30">30 por página</option>
+                    <label for="filtro_ano">Ano:</label>
+                    <select id="filtro_ano" onchange="renderizarTabelaAtletas()" style="padding: 6px;">
+                        <option value="todos">Todos os Anos</option>
+                        <option value="2025">2025</option>
+                        <option value="2026" selected>2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
                     </select>
                 </div>
             </div>
