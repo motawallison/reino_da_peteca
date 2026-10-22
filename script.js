@@ -23,6 +23,80 @@ let dadosGlobaisSistema = {
 let paginaAtual = 1;
 let itensPorPagina = 10;
 
+// ============================
+// LOGIN
+// ===========================
+document.addEventListener('DOMContentLoaded', () => {
+    const usuarioLogado = localStorage.getItem('peteca_usuario');
+    
+    if (usuarioLogado) {
+        mostrarSistema(usuarioLogado);
+    } else {
+        mostrarLogin();
+    }
+});
+
+function realizarLogin(event) {
+    event.preventDefault();
+    const emailInput = document.getElementById('login_email').value.trim();
+    const senhaInput = document.getElementById('login_senha').value.trim();
+
+    // Pega a lista de usuários que veio junto com o carregamento do sistema
+    const listaUsuarios = dadosGlobaisSistema.usuarios || [];
+
+    // Procura se existe algum usuário com o e-mail e senha correspondentes
+    const usuarioEncontrado = listaUsuarios.find(u => 
+        String(u.email).trim().toLowerCase() === emailInput.toLowerCase() &&
+        String(u.senha).trim() === senhaInput
+    );
+
+    if (usuarioEncontrado) {
+        // Salva a sessão no navegador
+        localStorage.setItem('peteca_usuario', usuarioEncontrado.email);
+        alert(`Bem-vindo(a), ${usuarioEncontrado.nome || 'Usuário'}!`);
+        mostrarSistema();
+    } else {
+        alert("❌ E-mail ou senha incorretos!");
+    }
+}
+
+
+function mostrarSistema(email) {
+    document.getElementById('telaLogin').style.display = 'none';
+    document.getElementById('sistemaPrincipal').style.display = 'block';
+    carregarDadosSistema();
+}
+
+function mostrarLogin() {
+    document.getElementById('telaLogin').style.display = 'block';
+    document.getElementById('sistemaPrincipal').style.display = 'none';
+}
+
+function fazerLogout() {
+    localStorage.removeItem('peteca_usuario');
+    location.reload();
+}
+
+// ==========================================================
+// FUNÇÃO DE LOGOFF / SAIR DO SISTEMA
+// ==========================================================
+
+function realizarLogout() {
+    if (confirm("Deseja realmente sair do sistema?")) {
+        // Remove a sessão salva no navegador
+        localStorage.removeItem('peteca_usuario');
+        
+        // Esconde o painel principal e mostra a tela de login
+        document.getElementById('sistemaPrincipal').style.display = 'none';
+        document.getElementById('telaLogin').style.display = 'block';
+        
+        // Limpa os campos de login se desejar
+        const emailInput = document.getElementById('login_email');
+        const senhaInput = document.getElementById('login_senha');
+        if (emailInput) emailInput.value = '';
+        if (senhaInput) senhaInput.value = '';
+    }
+}
 
 // ==========================================================
 // INICIALIZAÇÃO

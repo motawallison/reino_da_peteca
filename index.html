@@ -12,241 +12,190 @@
 
 <body>
 
-    <header>
-        <h1>🏸 Reino da Peteca</h1>
-        <p>Sistema de Gestão de Atletas</p>
-    </header>
-
-    <div class="container">
-        <!-- Abas de Navegação -->
-        <!-- Abas de Navegação -->
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('cadastro')">Cadastro</button>
-            <button class="tab-btn" onclick="switchTab('frequencia')">Frequência</button>
-            <button class="tab-btn" onclick="switchTab('atividade')">Nova Atividade</button>
-            <button class="tab-btn" onclick="switchTab('desempenho')">Desempenho</button>
-            <button class="tab-btn" onclick="switchTab('atletas')">Atletas</button>
-            <button class="tab-btn" onclick="switchTab('dashboard')">Dashboard do Atleta</button>
+    <!-- ========================================== -->
+    <!-- TELA DE LOGIN (Aparece primeiro) -->
+    <!-- ========================================== -->
+    <div id="telaLogin" class="container" style="max-width: 400px; margin-top: 5rem;">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <h2>🔐 Acesso Restrito</h2>
+            <p>Reino da Peteca</p>
         </div>
+        <form id="formLogin" onsubmit="realizarLogin(event)">
+            <div class="form-group">
+                <label>E-mail:</label>
+                <input type="email" id="login_email" required placeholder="seu@email.com">
+            </div>
+            <div class="form-group">
+                <label>Senha:</label>
+                <input type="password" id="login_senha" required placeholder="Sua senha">
+            </div>
+            <button type="submit" class="submit-btn">Entrar no Sistema</button>
+        </form>
+    </div>
 
-        <!-- ABA 1: CADASTRO -->
-        <div id="cadastro" class="form-section active">
-            <h2>Cadastro de Atleta</h2>
-            <form id="formCadastro" onsubmit="enviarDados(event, 'cadastro')">
-                <div class="form-group">
-                    <label>ID do Atleta (Automático):</label>
-                    <input type="number" id="cad_id" readonly style="background-color: #e9ecef; cursor: not-allowed;"
-                        required>
-                </div>
-                <div class="form-group">
-                    <label>Nome Completo:</label>
-                    <input type="text" id="cad_nome" required placeholder="Nome do atleta">
-                </div>
-                <div class="form-group">
-                    <label>Data de Nascimento:</label>
-                    <input type="date" id="cad_nascimento" required onchange="calcularIdade()" onblur="calcularIdade()">
-                </div>
-                <div class="form-group">
-                    <label>Idade:</label>
-                    <input type="number" id="cad_idade" readonly placeholder="Calculada automaticamente">
-                </div>
-                <div class="form-group">
-                    <label>Responsável:</label>
-                    <input type="text" id="cad_responsavel" placeholder="Nome do responsável">
-                </div>
-                <div class="form-group">
-                    <label>Contato (Telefone):</label>
-                    <input type="number" id="cad_contato" placeholder="Apenas números com DDD">
-                </div>
-                <button type="submit" class="submit-btn">Salvar Cadastro</button>
-            </form>
-        </div>
-
-        <!-- ABA 2: FREQUENCIA -->
-        <div id="frequencia" class="form-section">
-            <h2>Registro de Frequência em Lote</h2>
-            <form id="formFrequencia" onsubmit="enviarFrequenciaLote(event)">
-                <div class="form-group" style="max-width: 300px; margin-bottom: 2rem;">
-                    <label>Data da Frequência:</label>
-                    <input type="date" id="freq_data" required onchange="carregarFrequenciaDoDia()">
-                </div>
-
-                <div class="table-responsive">
-                    <table class="atletas-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nome do Atleta</th>
-                                <th>Situação</th>
-                                <th>Justificativa (Se Faltou)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela_frequencia_corpo">
-                            <!-- Preenchido dinamicamente via JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <button type="submit" class="submit-btn" style="margin-top: 1.5rem;">Salvar Frequência da Data</button>
-            </form>
-        </div>
-
-        <!-- ABA 3: CRIAR ATIVIDADE -->
-        <div id="atividade" class="form-section">
-            <h2>Cadastrar Nova Atividade</h2>
-            <form id="formCriarAtividade" onsubmit="enviarDados(event, 'criar_atividade')">
-                <div class="form-group">
-                    <label>ID da Atividade (Automático):</label>
-                    <input type="number" id="ativ_id" readonly style="background-color: #e9ecef; cursor: not-allowed;"
-                        required>
-                </div>
-                <div class="form-group">
-                    <label>Nome da Atividade:</label>
-                    <input type="text" id="ativ_nome_atividade" required
-                        placeholder="Ex: Treino de Saque, Circuito de Agilidade">
-                </div>
-                <div class="form-group">
-                    <label>Data:</label>
-                    <input type="date" id="ativ_data" required>
-                </div>
-                <div class="form-group">
-                    <label>Situação:</label>
-                    <select id="ativ_situacao" required>
-                        <option value="ATIVO">ATIVO</option>
-                        <option value="CANCELADO">CANCELADO</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Tipo:</label>
-                    <select id="ativ_tipo" required>
-                        <option value="VOLTAS">VOLTAS</option>
-                        <option value="MINUTOS">MINUTOS</option>
-                        <option value="REPETICAO">REPETICAO</option>
-                    </select>
-                </div>
-                <button type="submit" class="submit-btn">Salvar Atividade</button>
-            </form>
-        </div>
-
-        <!-- ABA 4: DESEMPENHO -->
-        <div id="desempenho" class="form-section">
-            <h2>Registro de Desempenho do Atleta</h2>
-            <form id="formDesempenho" onsubmit="enviarDados(event, 'desempenho')">
-                <!-- IDs ocultos preenchidos automaticamente -->
-                <input type="hidden" id="des_id_atividade">
-                <input type="hidden" id="des_id_atleta">
-
-                <div class="form-group">
-                    <label>Atividade:</label>
-                    <select id="des_select_atividade" required onchange="atualizarAtividadeSelecionada()">
-                        <option value="">Carregando atividades...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Atleta:</label>
-                    <select id="des_select_atleta" required onchange="atualizarAtletaDesempenho()">
-                        <option value="">Carregando atletas...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Desempenho (Campo Livre):</label>
-                    <input type="text" id="des_desempenho" required
-                        placeholder="Ex: 15 voltas completadas / 30 repetições">
-                </div>
-                <div class="form-group">
-                    <label>Data:</label>
-                    <input type="date" id="des_data" required>
-                </div>
-                <button type="submit" class="submit-btn">Salvar Desempenho</button>
-            </form>
-        </div>
-
-        <!-- ABA 5: ATLETAS (LISTAGEM E RELATÓRIO) -->
-        <div id="atletas" class="form-section">
-            <h2>Relatório Geral de Atletas</h2>
-
-            <div class="filtro-container" style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center;">
+    <!-- ========================================== -->
+    <!-- SISTEMA PRINCIPAL (Oculto até fazer login) -->
+    <!-- ========================================== -->
+    <div id="sistemaPrincipal" style="display: none;">
+        <header class="header-sistema">
+            <div class="header-content">
                 <div>
-                    <label for="filtro_mes">Mês:</label>
-                    <select id="filtro_mes" onchange="renderizarTabelaAtletas()" style="padding: 6px;">
-                        <option value="todos">Todos os Meses</option>
-                        <option value="01">Janeiro</option>
-                        <option value="02">Fevereiro</option>
-                        <option value="03">Março</option>
-                        <option value="04">Abril</option>
-                        <option value="05">Maio</option>
-                        <option value="06">Junho</option>
-                        <option value="07">Julho</option>
-                        <option value="08">Agosto</option>
-                        <option value="09">Setembro</option>
-                        <option value="10">Outubro</option>
-                        <option value="11">Novembro</option>
-                        <option value="12">Dezembro</option>
-                    </select>
+                    <h1>🏸 Reino da Peteca</h1>
+                    <p>Sistema de Gestão de Atletas</p>
                 </div>
-            
-                <div>
-                    <label for="filtro_ano">Ano:</label>
-                    <select id="filtro_ano" onchange="renderizarTabelaAtletas()" style="padding: 6px;">
-                        <option value="todos">Todos os Anos</option>
-                        <option value="2025">2025</option>
-                        <option value="2026" selected>2026</option>
-                        <option value="2027">2027</option>
-                        <option value="2028">2028</option>
-                    </select>
-                </div>
+                <button onclick="realizarLogout()" class="btn-sair">
+                    🚪 Sair
+                </button>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- Abas de Navegação -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('cadastro')">Cadastro</button>
+                <button class="tab-btn" onclick="switchTab('frequencia')">Frequência</button>
+                <button class="tab-btn" onclick="switchTab('atividade')">Nova Atividade</button>
+                <button class="tab-btn" onclick="switchTab('desempenho')">Desempenho</button>
+                <button class="tab-btn" onclick="switchTab('atletas')">Atletas</button>
+                <button class="tab-btn" onclick="switchTab('dashboard')">Dashboard do Atleta</button>
             </div>
 
-            <div class="table-responsive">
-                <table class="atletas-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nome</th>
-                            <th>Idade</th>
-                            <th>Responsável</th>
-                            <th>Presenças</th>
-                            <th>Atividades Realizadas</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabela_atletas_corpo">
-                        <!-- Preenchido via JavaScript -->
-                    </tbody>
-                </table>
+            <!-- ABA 1: CADASTRO -->
+            <div id="cadastro" class="form-section active">
+                <h2>Cadastro de Atleta</h2>
+                <form id="formCadastro" onsubmit="enviarDados(event, 'cadastro')">
+                    <div class="form-group">
+                        <label>ID do Atleta (Automático):</label>
+                        <input type="number" id="cad_id" readonly style="background-color: #e9ecef; cursor: not-allowed;" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nome Completo:</label>
+                        <input type="text" id="cad_nome" required placeholder="Nome do atleta">
+                    </div>
+                    <div class="form-group">
+                        <label>Data de Nascimento:</label>
+                        <input type="date" id="cad_nascimento" required onchange="calcularIdade()" onblur="calcularIdade()">
+                    </div>
+                    <div class="form-group">
+                        <label>Idade:</label>
+                        <input type="number" id="cad_idade" readonly placeholder="Calculada automaticamente">
+                    </div>
+                    <div class="form-group">
+                        <label>Responsável:</label>
+                        <input type="text" id="cad_responsavel" placeholder="Nome do responsável">
+                    </div>
+                    <div class="form-group">
+                        <label>Contato (Telefone):</label>
+                        <input type="number" id="cad_contato" placeholder="Apenas números com DDD">
+                    </div>
+                    <button type="submit" class="submit-btn">Salvar Cadastro</button>
+                </form>
             </div>
 
-            <div class="pagination-container">
-                <button id="btn_anterior" onclick="paginaAnterior()" class="page-btn">Anterior</button>
-                <span id="info_paginacao">Página 1 de 1</span>
-                <button id="btn_proximo" onclick="proximaPagina()" class="page-btn">Próxima</button>
+            <!-- ABA 2: FREQUENCIA -->
+            <div id="frequencia" class="form-section">
+                <h2>Registro de Frequência em Lote</h2>
+                <form id="formFrequencia" onsubmit="enviarFrequenciaLote(event)">
+                    <div class="form-group" style="max-width: 300px; margin-bottom: 2rem;">
+                        <label>Data da Frequência:</label>
+                        <input type="date" id="freq_data" required onchange="carregarFrequenciaDoDia()">
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="atletas-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nome do Atleta</th>
+                                    <th>Situação</th>
+                                    <th>Justificativa (Se Faltou)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela_frequencia_corpo">
+                                <!-- Preenchido dinamicamente via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <button type="submit" class="submit-btn" style="margin-top: 1.5rem;">Salvar Frequência da Data</button>
+                </form>
             </div>
-        </div>
 
-        <!-- ABA 6: DASHBOARD DO ATLETA -->
-        <div id="dashboard" class="form-section">
-            <h2>Dashboard Completo do Atleta</h2>
+            <!-- ABA 3: CRIAR ATIVIDADE -->
+            <div id="atividade" class="form-section">
+                <h2>Cadastrar Nova Atividade</h2>
+                <form id="formCriarAtividade" onsubmit="enviarDados(event, 'criar_atividade')">
+                    <div class="form-group">
+                        <label>ID da Atividade (Automático):</label>
+                        <input type="number" id="ativ_id" readonly style="background-color: #e9ecef; cursor: not-allowed;" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nome da Atividade:</label>
+                        <input type="text" id="ativ_nome_atividade" required placeholder="Ex: Treino de Saque, Circuito de Agilidade">
+                    </div>
+                    <div class="form-group">
+                        <label>Data:</label>
+                        <input type="date" id="ativ_data" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Situação:</label>
+                        <select id="ativ_situacao" required>
+                            <option value="ATIVO">ATIVO</option>
+                            <option value="CANCELADO">CANCELADO</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo:</label>
+                        <select id="ativ_tipo" required>
+                            <option value="VOLTAS">VOLTAS</option>
+                            <option value="MINUTOS">MINUTOS</option>
+                            <option value="REPETICAO">REPETICAO</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="submit-btn">Salvar Atividade</button>
+                </form>
+            </div>
 
-            <!-- Filtros do Dashboard -->
-            <div class="dash-filtros" style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 6px; align-items: flex-end;">
-                <div style="flex: 2; min-width: 220px;">
-                    <label for="dash_select_atleta">Selecione o Atleta:</label>
-                    <select id="dash_select_atleta" onchange="renderizarDashboard()" style="padding: 8px;">
-                        <option value="">Carregando atletas...</option>
-                    </select>
-                </div>
+            <!-- ABA 4: DESEMPENHO -->
+            <div id="desempenho" class="form-section">
+                <h2>Registro de Desempenho do Atleta</h2>
+                <form id="formDesempenho" onsubmit="enviarDados(event, 'desempenho')">
+                    <input type="hidden" id="des_id_atividade">
+                    <input type="hidden" id="des_id_atleta">
 
-                <div style="flex: 1; min-width: 150px;">
-                    <label for="dash_filtro_periodo">Período:</label>
-                    <select id="dash_filtro_periodo" onchange="toggleFiltroPeriodoDash()" style="padding: 8px;">
-                        <option value="todos">Todo o Período</option>
-                        <option value="especifico">Mês Específico</option>
-                    </select>
-                </div>
+                    <div class="form-group">
+                        <label>Atividade:</label>
+                        <select id="des_select_atividade" required onchange="atualizarAtividadeSelecionada()">
+                            <option value="">Carregando atividades...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Atleta:</label>
+                        <select id="des_select_atleta" required onchange="atualizarAtletaDesempenho()">
+                            <option value="">Carregando atletas...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Desempenho (Campo Livre):</label>
+                        <input type="text" id="des_desempenho" required placeholder="Ex: 15 voltas completadas / 30 repetições">
+                    </div>
+                    <div class="form-group">
+                        <label>Data:</label>
+                        <input type="date" id="des_data" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Salvar Desempenho</button>
+                </form>
+            </div>
 
-                <div id="dash_bloco_mes_ano" style="display: none; gap: 10px; flex: 2; min-width: 250px;">
+            <!-- ABA 5: ATLETAS -->
+            <div id="atletas" class="form-section">
+                <h2>Relatório Geral de Atletas</h2>
+
+                <div class="filtro-container" style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center;">
                     <div>
-                        <label for="dash_mes">Mês:</label>
-                        <select id="dash_mes" onchange="renderizarDashboard()" style="padding: 8px;">
+                        <label for="filtro_mes">Mês:</label>
+                        <select id="filtro_mes" onchange="renderizarTabelaAtletas()" style="padding: 6px;">
+                            <option value="todos">Todos os Meses</option>
                             <option value="01">Janeiro</option>
                             <option value="02">Fevereiro</option>
                             <option value="03">Março</option>
@@ -261,9 +210,11 @@
                             <option value="12">Dezembro</option>
                         </select>
                     </div>
+                
                     <div>
-                        <label for="dash_ano">Ano:</label>
-                        <select id="dash_ano" onchange="renderizarDashboard()" style="padding: 8px;">
+                        <label for="filtro_ano">Ano:</label>
+                        <select id="filtro_ano" onchange="renderizarTabelaAtletas()" style="padding: 6px;">
+                            <option value="todos">Todos os Anos</option>
                             <option value="2025">2025</option>
                             <option value="2026" selected>2026</option>
                             <option value="2027">2027</option>
@@ -271,76 +222,146 @@
                         </select>
                     </div>
                 </div>
-            </div>
 
-            <!-- Cards de Resumo Rápidos -->
-            <div class="dash-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
-                <div style="background: #e8f5e9; padding: 15px; border-radius: 6px; border-left: 4px solid #2e7d32;">
-                    <h4 style="margin: 0; color: #2e7d32; font-size: 0.9rem;">Presenças</h4>
-                    <p id="dash_total_presencas" style="font-size: 1.8rem; font-weight: bold; margin: 5px 0 0 0;">0</p>
-                </div>
-                <div style="background: #ffebee; padding: 15px; border-radius: 6px; border-left: 4px solid #c62828;">
-                    <h4 style="margin: 0; color: #c62828; font-size: 0.9rem;">Faltas</h4>
-                    <p id="dash_total_faltas" style="font-size: 1.8rem; font-weight: bold; margin: 5px 0 0 0;">0</p>
-                </div>
-                <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; border-left: 4px solid #1565c0;">
-                    <h4 style="margin: 0; color: #1565c0; font-size: 0.9rem;">Atividades Realizadas</h4>
-                    <p id="dash_total_atividades" style="font-size: 1.8rem; font-weight: bold; margin: 5px 0 0 0;">0</p>
-                </div>
-            </div>
-
-            <!-- Gráficos e Tabelas Detalhadas -->
-            <div class="dash-charts-grid">
-                <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px;">
-                    <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Frequência (Presenças vs Faltas)</h3>
-                    <canvas id="graficoFrequencia" style="max-height: 250px;"></canvas>
-                </div>
-                <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px;">
-                    <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Atividades por Tipo / Realização</h3>
-                    <canvas id="graficoAtividades" style="max-height: 250px;"></canvas>
-                </div>
-            </div>
-
-            <!-- Tabela de Justificativas de Faltas -->
-            <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px;">
-                <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Histórico de Justificativas de Faltas</h3>
                 <div class="table-responsive">
                     <table class="atletas-table">
                         <thead>
                             <tr>
-                                <th>Data</th>
-                                <th>Justificativa Informada</th>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Idade</th>
+                                <th>Responsável</th>
+                                <th>Presenças</th>
+                                <th>Atividades Realizadas</th>
                             </tr>
                         </thead>
-                        <tbody id="tabela_dash_faltas">
-                            <tr><td colspan="2" style="text-align:center;">Nenhum registro para exibir.</td></tr>
-                        </tbody>
+                        <tbody id="tabela_atletas_corpo"></tbody>
                     </table>
+                </div>
+
+                <div class="pagination-container">
+                    <button id="btn_anterior" onclick="paginaAnterior()" class="page-btn">Anterior</button>
+                    <span id="info_paginacao">Página 1 de 1</span>
+                    <button id="btn_proximo" onclick="proximaPagina()" class="page-btn">Próxima</button>
                 </div>
             </div>
 
-            <!-- Tabela de Desempenho Detalhado por Atividade -->
-            <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px;">
-                <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Desempenho Detalhado nas Atividades</h3>
-                <div class="table-responsive">
-                    <table class="atletas-table">
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Atividade</th>
-                                <th>Resultado / Desempenho</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela_dash_desempenho">
-                            <tr><td colspan="3" style="text-align:center;">Nenhum registro para exibir.</td></tr>
-                        </tbody>
-                    </table>
+            <!-- ABA 6: DASHBOARD -->
+            <div id="dashboard" class="form-section">
+                <h2>Dashboard Completo do Atleta</h2>
+
+                <div class="dash-filtros" style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 6px; align-items: flex-end;">
+                    <div style="flex: 2; min-width: 220px;">
+                        <label for="dash_select_atleta">Selecione o Atleta:</label>
+                        <select id="dash_select_atleta" onchange="renderizarDashboard()" style="padding: 8px;">
+                            <option value="">Carregando atletas...</option>
+                        </select>
+                    </div>
+
+                    <div style="flex: 1; min-width: 150px;">
+                        <label for="dash_filtro_periodo">Período:</label>
+                        <select id="dash_filtro_periodo" onchange="toggleFiltroPeriodoDash()" style="padding: 8px;">
+                            <option value="todos">Todo o Período</option>
+                            <option value="especifico">Mês Específico</option>
+                        </select>
+                    </div>
+
+                    <div id="dash_bloco_mes_ano" style="display: none; gap: 10px; flex: 2; min-width: 250px;">
+                        <div>
+                            <label for="dash_mes">Mês:</label>
+                            <select id="dash_mes" onchange="renderizarDashboard()" style="padding: 8px;">
+                                <option value="01">Janeiro</option>
+                                <option value="02">Fevereiro</option>
+                                <option value="03">Março</option>
+                                <option value="04">Abril</option>
+                                <option value="05">Maio</option>
+                                <option value="06">Junho</option>
+                                <option value="07">Julho</option>
+                                <option value="08">Agosto</option>
+                                <option value="09">Setembro</option>
+                                <option value="10">Outubro</option>
+                                <option value="11">Novembro</option>
+                                <option value="12">Dezembro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="dash_ano">Ano:</label>
+                            <select id="dash_ano" onchange="renderizarDashboard()" style="padding: 8px;">
+                                <option value="2025">2025</option>
+                                <option value="2026" selected>2026</option>
+                                <option value="2027">2027</option>
+                                <option value="2028">2028</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dash-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 6px; border-left: 4px solid #2e7d32;">
+                        <h4 style="margin: 0; color: #2e7d32; font-size: 0.9rem;">Presenças</h4>
+                        <p id="dash_total_presencas" style="font-size: 1.8rem; font-weight: bold; margin: 5px 0 0 0;">0</p>
+                    </div>
+                    <div style="background: #ffebee; padding: 15px; border-radius: 6px; border-left: 4px solid #c62828;">
+                        <h4 style="margin: 0; color: #c62828; font-size: 0.9rem;">Faltas</h4>
+                        <p id="dash_total_faltas" style="font-size: 1.8rem; font-weight: bold; margin: 5px 0 0 0;">0</p>
+                    </div>
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; border-left: 4px solid #1565c0;">
+                        <h4 style="margin: 0; color: #1565c0; font-size: 0.9rem;">Atividades Realizadas</h4>
+                        <p id="dash_total_atividades" style="font-size: 1.8rem; font-weight: bold; margin: 5px 0 0 0;">0</p>
+                    </div>
+                </div>
+
+                <div class="dash-charts-grid">
+                    <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px;">
+                        <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Frequência (Presenças vs Faltas)</h3>
+                        <canvas id="graficoFrequencia" style="max-height: 250px;"></canvas>
+                    </div>
+                    <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px;">
+                        <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Atividades por Tipo / Realização</h3>
+                        <canvas id="graficoAtividades" style="max-height: 250px;"></canvas>
+                    </div>
+                </div>
+
+                <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px;">
+                    <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Histórico de Justificativas de Faltas</h3>
+                    <div class="table-responsive">
+                        <table class="atletas-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Justificativa Informada</th>
+                                    </tr>
+                            </thead>
+                            <tbody id="tabela_dash_faltas">
+                                <tr><td colspan="2" style="text-align:center;">Nenhum registro para exibir.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px;">
+                    <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Desempenho Detalhado nas Atividades</h3>
+                    <div class="table-responsive">
+                        <table class="atletas-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Atividade</th>
+                                    <th>Resultado / Desempenho</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela_dash_desempenho">
+                                <tr><td colspan="3" style="text-align:center;">Nenhum registro para exibir.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+
+            <div id="loading" class="loading">Salvando dados na planilha... Aguarde.</div>
         </div>
-
-        <div id="loading" class="loading">Salvando dados na planilha... Aguarde.</div>
     </div>
+
 </body>
 
 </html>

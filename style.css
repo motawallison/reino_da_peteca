@@ -6,6 +6,50 @@
 }
 
 /* ==========================================================
+   AJUSTE DO CABEÇALHO E BOTÃO SAIR
+   ========================================================== */
+
+   .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1000px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.btn-sair {
+    background-color: #d9534f;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: background 0.3s;
+}
+
+.btn-sair:hover {
+    background-color: #c9302c;
+}
+
+/* Responsividade para Celulares */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+
+    .btn-sair {
+        width: 100%;
+        max-width: 150px;
+        margin-top: 5px;
+    }
+}
+
+/* ==========================================================
    AJUSTES GLOBAIS DE RESPONSIVIDADE
    ========================================================== */
 
