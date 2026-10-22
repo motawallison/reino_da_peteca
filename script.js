@@ -15,6 +15,7 @@ let dadosGlobaisSistema = {
     frequencia: [],
     atividade: [],
     desempenho: [],
+    desempenho_escola: [], 
     resumo: {
         presencas: {}
     }
@@ -300,7 +301,8 @@ function carregarDadosSistema() {
 
 function popularSelects(atletas) {
     const selectDes = document.getElementById('des_select_atleta');
-    const selectDash = document.getElementById('dash_select_atleta'); // <--- ADICIONE ESTA LINHA
+    const selectDash = document.getElementById('dash_select_atleta');
+    const selectEsc = document.getElementById('esc_select_atleta'); // <--- NOVO SELECT ESCOLAR
 
     let options = '<option value="">Selecione um atleta...</option>';
 
@@ -314,7 +316,8 @@ function popularSelects(atletas) {
     });
 
     if (selectDes) selectDes.innerHTML = options;
-    if (selectDash) selectDash.innerHTML = options; // <--- ADICIONE ESTA LINHA
+    if (selectDash) selectDash.innerHTML = options;
+    if (selectEsc) selectEsc.innerHTML = options; // <--- PREENCHE O SELECT ESCOLAR
 }
 
 
@@ -804,6 +807,144 @@ function enviarDados(event, tipo) {
 }
 
 
+
+// ==========================================================
+// ENVIAR DESEMPENHO ESCOLAR 
+// ==========================================================
+
+
+function normalizarMesAnoEscolar(valor) {
+    const texto = String(valor || '').trim().toLowerCase();
+
+    const meses = {
+        jan: '01', janeiro: '01',
+        fev: '02', fevereiro: '02',
+        mar: '03', marco: '03', março: '03',
+        abr: '04', abril: '04',
+        mai: '05', maio: '05',
+        jun: '06', junho: '06',
+        jul: '07', julho: '07',
+        ago: '08', agosto: '08',
+        set: '09', setembro: '09',
+        out: '10', outubro: '10',
+        nov: '11', novembro: '11',
+        dez: '12', dezembro: '12'
+    };
+
+    const partes = texto.split('/');
+    if (partes.length !== 2) return texto;
+
+    let mes = partes[0].trim();
+    let ano = partes[1].trim();
+
+    if (meses[mes]) {
+        mes = meses[mes];
+    } else if (/^\d{1,2}$/.test(mes)) {
+        mes = mes.padStart(2, '0');
+    }
+
+    return `${mes}/${ano}`;
+}
+
+function enviarDesempenhoEscola(event) {
+    event.preventDefault();
+
+    const idAtleta = String(
+        document.getElementById('esc_select_atleta').value
+    ).trim();
+
+    const atleta = (dadosGlobaisSistema.cadastro || []).find(a =>
+        String(a.id_atleta || a.id).trim() === idAtleta
+    );
+
+    if (!idAtleta || !atleta) {
+        alert('Selecione um atleta válido.');
+        return;
+    }
+
+    const mes = document.getElementById('esc_mes').value;
+    const ano = document.getElementById('esc_ano').value;
+    const mesAnoSelecionado = `${mes}/${ano}`;
+
+    const listaEscola = dadosGlobaisSistema.desempenho_escola || [];
+
+    // Bloqueia se o atleta já tiver avaliação no mês/ano escolhido.
+    const jaExisteNoMes = listaEscola.some(item =>
+        String(item.id_atleta || '').trim() === idAtleta &&
+        normalizarMesAnoEscolar(item.mes) ===
+            normalizarMesAnoEscolar(mesAnoSelecionado)
+    );
+
+    if (jaExisteNoMes) {
+        alert(
+            `Avaliação não permitida!\n\n` +
+            `${atleta.nome} já possui uma avaliação escolar ` +
+            `registrada para ${mes}/${ano}.\n\n` +
+            `Cada atleta pode ter somente uma avaliação por mês.`
+        );
+        return;
+    }
+
+    let maiorId = 0;
+
+    listaEscola.forEach(item => {
+        const id = Number(item.id_desp || 0);
+        if (id > maiorId) maiorId = id;
+    });
+
+    const dados = {
+        acao: 'desempenho_escola',
+        id_desp: maiorId + 1,
+        id_atleta: idAtleta,
+        nome: atleta.nome,
+        mes: mesAnoSelecionado,
+        desempenho: document.getElementById('esc_desempenho').value,
+        observacao: document.getElementById('esc_observacao').value
+    };
+
+    mostrarLoading(true);
+
+    fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(dados)
+    })
+    .then(response => response.json())
+    .then(resultado => {
+        if (resultado.result !== 'success') {
+            if (resultado.codigo === 'DUPLICADO') {
+                alert(
+                    `Avaliação não permitida!\n\n` +
+                    `${atleta.nome} já possui uma avaliação escolar ` +
+                    `registrada para ${mes}/${ano}.`
+                );
+
+                // Atualiza os dados locais com os registros do servidor.
+                return carregarDadosSistema();
+            }
+
+            throw new Error(resultado.error || 'Erro desconhecido');
+        }
+
+        alert('Desempenho escolar salvo com sucesso!');
+
+        const form = document.getElementById('formDesempenhoEscola');
+        if (form) form.reset();
+
+        return carregarDadosSistema();
+    })
+    .catch(error => {
+        console.error('Erro ao enviar desempenho escolar:', error);
+        alert('Erro ao salvar os dados:\n' + error.message);
+    })
+    .finally(() => {
+        mostrarLoading(false);
+    });
+}
+
+
 // ==========================================================
 // LIMPAR FORMULÁRIO
 // ==========================================================
@@ -829,6 +970,10 @@ function limparFormulario(tipo) {
     ) {
         formId =
             'formDesempenho';
+    }
+
+    else if (tipo === 'desempenho_escola') {
+        formId = 'formDesempenhoEscola';
     }
 
 
@@ -1248,6 +1393,44 @@ function renderizarDashboard() {
 
     // 3. Renderizar Gráficos Chart.js
     atualizarGraficosDashboard(totalPresencas, totalFaltas, despAtleta, atividadesLista);
+
+    // 4. Filtrar Desempenho Escolar do Atleta
+    const listaEscola = dadosGlobaisSistema.desempenho_escola || [];
+    let escolaAtleta = listaEscola.filter(e => String(e.id_atleta || '').trim() === String(idAtletaSelecionado));
+
+    if (tipoPeriodo === 'especifico') {
+        const periodoDesejado = `${mesSelecionado}/${anoSelecionado}`; // Ex: "03/2026"
+        escolaAtleta = escolaAtleta.filter(e => String(e.mes || '').trim() === periodoDesejado);
+    }
+
+    const tbodyEscola = document.getElementById('tabela_dash_desempenho_escola');
+    if (tbodyEscola) {
+        tbodyEscola.innerHTML = '';
+        if (escolaAtleta.length === 0) {
+            tbodyEscola.innerHTML = `<tr><td colspan="3" style="text-align:center;">Nenhum registro escolar no período.</td></tr>`;
+        } else {
+            escolaAtleta.forEach(e => {
+                const mesRef = e.mes || '-';
+                const nivel = e.desempenho || '-';
+                const obs = e.observacao || 'Nenhuma observação informada';
+
+                // Cores de destaque opcionais para os níveis escolares
+                let corBadge = '#333';
+                if (nivel === 'ÓTIMO') corBadge = '#2e7d32';
+                else if (nivel === 'BOM') corBadge = '#1565c0';
+                else if (nivel === 'REGULAR') corBadge = '#f57c00';
+                else if (nivel === 'RUIM' || nivel === 'PÉSSIMO') corBadge = '#c62828';
+
+                tbodyEscola.innerHTML += `
+                    <tr>
+                        <td><strong>${mesRef}</strong></td>
+                        <td><span style="color: ${corBadge}; font-weight: bold;">${nivel}</span></td>
+                        <td>${obs}</td>
+                    </tr>
+                `;
+            });
+        }
+    }
 }
 
 function atualizarGraficosDashboard(presencas, faltas, despAtleta, atividadesLista) {
