@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Favicons e Ícones para Dispositivos Móveis -->
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="img/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="img/android-chrome-512x512.png">
+
 </head>
 
 <body>
@@ -317,8 +325,8 @@
                 </form>
             </div>
 
-             <!-- ABA 7: DASHBOARD -->
-             <div id="dashboard" class="form-section">
+            <!-- ABA 7: DASHBOARD -->
+            <div id="dashboard" class="form-section">
                 <h2>Dashboard Completo do Atleta</h2>
 
                 <div class="dash-filtros"
@@ -445,8 +453,10 @@
                 </div>
 
                 <!-- Bloco de Desempenho Escolar no Dashboard -->
-                <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-top: 20px;">
-                    <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Desempenho Escolar no Período</h3>
+                <div
+                    style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-top: 20px;">
+                    <h3 style="font-size: 1rem; margin-top: 0; color: var(--primary);">Desempenho Escolar no Período
+                    </h3>
                     <div class="table-responsive">
                         <table class="atletas-table">
                             <thead>
@@ -457,7 +467,9 @@
                                 </tr>
                             </thead>
                             <tbody id="tabela_dash_desempenho_escola">
-                                <tr><td colspan="3" style="text-align:center;">Nenhum registro escolar para exibir.</td></tr>
+                                <tr>
+                                    <td colspan="3" style="text-align:center;">Nenhum registro escolar para exibir.</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
